@@ -13,6 +13,7 @@ contract FundMe {
     address[] private s_funders;
 
     // Could we make this constant?  /* hint: no! We should make it immutable! */
+    // My comment: it can't be a constant because its values will be assigned at the construction time. 
     address private /* immutable */ i_owner;
     uint256 public constant MINIMUM_USD = 5 * 10 ** 18;
     AggregatorV3Interface private s_priceFeed;
@@ -41,6 +42,27 @@ contract FundMe {
     
     function withdraw() public onlyOwner {
         for (uint256 funderIndex=0; funderIndex < s_funders.length; funderIndex++){
+            address funder = s_funders[funderIndex];
+            s_addressToAmountFunded[funder] = 0;
+        }
+        s_funders = new address[](0);
+        // // transfer
+        // payable(msg.sender).transfer(address(this).balance);
+        
+        // // send
+        // bool sendSuccess = payable(msg.sender).send(address(this).balance);
+        // require(sendSuccess, "Send failed");
+
+        // call
+        (bool callSuccess, ) = payable(msg.sender).call{value: address(this).balance}("");
+        require(callSuccess, "Call failed");
+    }
+
+        
+    function cheaperWithdraw() public onlyOwner {
+        // To avoid to load from storage every loop
+        uint256 fundersLength = s_funders.length;
+        for (uint256 funderIndex=0; funderIndex < fundersLength; funderIndex++){
             address funder = s_funders[funderIndex];
             s_addressToAmountFunded[funder] = 0;
         }
